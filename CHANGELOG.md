@@ -2,6 +2,8 @@
 
 ## [3.1.4]
 
+- include time in save_environment, #4
+
 [3.1.4]: https://github.com/eventum/scm/compare/v3.1.3...master
 
 ## [3.1.3] - 2017-10-24
