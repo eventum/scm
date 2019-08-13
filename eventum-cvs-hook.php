@@ -55,6 +55,7 @@ function main($context)
 
     $params = array(
         'scm' => 'cvs',
+        'commit_date' => $context['time'],
         'scm_name' => $context['scm_name'],
         'username' => $username,
         'commit_msg' => $commit_msg,
