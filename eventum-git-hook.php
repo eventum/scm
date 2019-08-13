@@ -41,12 +41,12 @@ function process_push($reflist)
     // process each branch push
     foreach ($reflist as $refs) {
         list($old, $new, $refname) = $refs;
-        if ($new == $nullsha1) {
+        if ($new === $nullsha1) {
             // remote branch is deleted. nothing to do
             continue;
         }
 
-        if ($old == $nullsha1) {
+        if ($old === $nullsha1) {
             // remote branch is created. use emptysha1 instead
             $old = $emptysha1;
         }

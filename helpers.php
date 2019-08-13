@@ -78,7 +78,7 @@ function fileparts($abspath)
 {
     // special for "dirname/" case, pathinfo would set dir to '.' and filename to 'dirname'
     $length = strlen($abspath);
-    if ($abspath[$length - 1] == '/') {
+    if ($abspath[$length - 1] === '/') {
         return array(rtrim($abspath, '/'), '');
     }
 
@@ -126,7 +126,7 @@ function wget($url, $params, $headers = true)
 
     // see if https is supported
     $scheme = parse_url($url, PHP_URL_SCHEME);
-    if (!in_array($scheme, stream_get_wrappers())) {
+    if (!in_array($scheme, stream_get_wrappers(), true)) {
         throw new RuntimeException("$scheme:// scheme not supported. Load openssl php extension?");
     }
 
@@ -230,7 +230,7 @@ function _getopt($parameters)
         foreach ($argv as $key => $chunk) {
             $regex = '/^' . (isset($option[1]) ? '--' : '-') . $option . '/';
             if (($chunk == $value && $argv[$key - 1][0] == '-') || preg_match($regex, $chunk)) {
-                array_push($pruneargv, $key);
+                $pruneargv[] = $key;
             }
         }
     }

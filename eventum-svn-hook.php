@@ -124,9 +124,9 @@ function svn_commit_files($repo, $rev)
         list($change_info, $filename) = preg_split('/\s+/', $change, 2);
         $flags = preg_split('//', $change_info, -1, PREG_SPLIT_NO_EMPTY);
 
-        if (array_search('A', $flags) !== false) {
+        if (in_array('A', $flags, true)) {
             $change_type = 'added';
-        } elseif (array_search('D', $flags) !== false) {
+        } elseif (in_array('D', $flags, true)) {
             $change_type = 'removed';
         } else {
             $change_type = 'modified';

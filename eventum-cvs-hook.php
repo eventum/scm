@@ -111,7 +111,7 @@ function cvs_commit_info($argv)
     // user who is committing these changes
     $username = array_shift($argv);
 
-    if (count($argv) == 1) {
+    if (count($argv) === 1) {
         $modified_files = cvs_parse_info_1_11($argv);
     } else {
         $modified_files = cvs_parse_info_1_12($argv);
@@ -223,7 +223,7 @@ function cvs_commitid($filename)
  */
 function cvs_filter_none($rev)
 {
-    if ($rev != 'NONE') {
+    if ($rev !== 'NONE') {
         return $rev;
     }
 
