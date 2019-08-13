@@ -185,17 +185,59 @@ function cvs_parse_info_1_12($args)
 
     // now parse the list of modified files
     $modified_files = array();
+    $use_rcs = !file_exists('CVS/Entries');
     while ($file_info = array_splice($args, 0, 3)) {
         list($filename, $old_revision, $new_revision) = $file_info;
+        $old_revision = cvs_filter_none($old_revision);
+        $new_revision = cvs_filter_none($new_revision);
         $modified_files[] = array(
             'filename' => "$cvs_module/$filename",
-            'old_revision' => cvs_filter_none($old_revision),
-            'new_revision' => cvs_filter_none($new_revision),
-            'commitid' => cvs_commitid($filename),
+            'old_revision' => $old_revision,
+            'new_revision' => $new_revision,
+            'commitid' => $use_rcs ? rcs_commitid($filename, $new_revision) : cvs_commitid($filename),
         );
     }
 
     return $modified_files;
+}
+
+/**
+ * @param string $pattern
+ * @param array $input
+ * @return string|null
+ * @internal
+ */
+function cvs_match_commitid($pattern, array $input)
+{
+    // find line matching 'Commit Identifier'
+    $lines = preg_grep($pattern, $input);
+    if (!$lines) {
+        return null;
+    }
+
+    // match commit id
+    if (!preg_match($pattern, current($lines), $m)) {
+        return null;
+    }
+
+    return $m['commitid'];
+}
+
+/**
+ * Extract 'commitid' from file using rcs
+ *
+ * @param string $filename
+ * @param string $revision
+ * @return string
+ */
+function rcs_commitid($filename, $revision)
+{
+    $result = execx('rcs log -r' . escapeshellarg($revision) . ' ' . escapeshellarg($filename));
+
+    // date: 2019/08/13 09:04:57;  author: glen;  state: Exp;  lines: +2 -3; commitid: uoHAXoFNyk8CxQyB
+    $pattern = '/^date:.+commitid:\s+(?P<commitid>\S+)/sm';
+
+    return cvs_match_commitid($pattern, $result);
 }
 
 /**
@@ -209,17 +251,8 @@ function cvs_commitid($filename)
     $result = execx('cvs -Qn status ' . escapeshellarg($filename));
 
     $pattern = '/Commit Identifier:\s+(?P<commitid>\S+)/';
-    // find line matching 'Commit Identifier'
-    $lines = preg_grep($pattern, $result);
-    if (!$lines) {
-        return null;
-    }
-    // match commit id
-    if (!preg_match($pattern, current($lines), $m)) {
-        return null;
-    }
 
-    return $m['commitid'];
+    return cvs_match_commitid($pattern, $result);
 }
 
 /**
