@@ -285,21 +285,74 @@ function get_all_env()
 }
 
 /**
- * Method used to store execution environment details to temp file so the failed command could be repeated
+ * Create execution environment context
+ *
+ * @param array $argv
+ * @param array|null $arguments
+ * @return array
  */
-function save_environment()
+function create_context(array $argv, array $arguments = null)
 {
-    global $original_argv, $PROGRAM;
-
-    $tmpfile = tempnam(sys_get_temp_dir(), $PROGRAM);
-    file_put_contents($tmpfile, serialize(array(
+    return array(
         'time' => microtime(true),
         'php_version' => PHP_VERSION,
-        'command' => $original_argv,
+        'arguments' => $arguments,
+        'argv' => $argv,
         'cwd' => getcwd(),
         'stdin' => getInput(),
         'env' => get_all_env(),
-    )));
+    );
+}
+
+/**
+ * Store execution environment details to temp file so the failed command could be repeated
+ * @return bool|string
+ */
+/**
+ * @param array $context
+ * @return bool|string
+ */
+function store_environment(array $context)
+{
+    global $PROGRAM;
+
+    $tmpfile = tempnam(sys_get_temp_dir(), $PROGRAM);
+    file_put_contents($tmpfile, serialize($context));
 
     return $tmpfile;
+}
+
+/**
+ * @param array $argv
+ * @param array|null $arguments
+ * @return string
+ */
+function save_environment($argv, $arguments = null)
+{
+    return store_environment(create_context($argv, $arguments));
+}
+
+/**
+ * Load context from file, and adjust environment accordingly.
+ *
+ * @param string $dump_file
+ * @return array
+ */
+function load_context($dump_file)
+{
+    $contents = file_get_contents($dump_file);
+    if ($contents === false) {
+        throw new RuntimeException("Unable to load $dump_file");
+    }
+
+    /** @noinspection UnserializeExploitsInspection */
+    $context = unserialize($contents);
+
+    // backward compatible
+    if (!isset($context['arguments']) && isset($context['command'])) {
+        $context['arguments'] = $context['command'];
+        array_shift($context['arguments']);
+    }
+
+    return $context;
 }

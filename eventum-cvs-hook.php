@@ -14,28 +14,35 @@
 
 require_once __DIR__ . '/helpers.php';
 
-$original_argv = $argv;
+$arguments = $argv;
 $default_options = array(
     'n' => 'cvs',
 );
-$options = _getopt('n:') + $default_options;
+$options = _getopt('l:n:') + $default_options;
+$PROGRAM = basename(realpath(array_shift($arguments)), '.php');
 
-$PROGRAM = basename(realpath(array_shift($argv)), '.php');
-$eventum_url = array_shift($argv);
-$scm_name = $options['n'];
+if (isset($options['l'])) {
+    $context = load_cvs_context($options['l']);
+} else {
+    $context = create_context($argv, $arguments);
+}
+
+$eventum_url = array_shift($context['arguments']);
+$context['eventum_url'] = $eventum_url;
+$context['scm_name'] = $options['n'];
 
 try {
-    main($scm_name, $argv);
+    main($context);
 } catch (Exception $e) {
     error_log("ERROR[$PROGRAM]: " . $e->getMessage());
-    error_log('Debug saved to: ' . save_environment());
+    error_log('Debug saved to: ' . store_environment($context));
     exit(1);
 }
 exit(0);
 
-function main($scm_name, $argv)
+function main($context)
 {
-    $commit_msg = cvs_commit_msg();
+    $commit_msg = cvs_commit_msg($context['stdin']);
 
     // parse the commit message and get all issue numbers we can find
     $issues = match_issues($commit_msg);
@@ -43,12 +50,12 @@ function main($scm_name, $argv)
         return;
     }
 
-    list($username, $modified_files) = cvs_commit_info($argv);
+    list($username, $modified_files) = cvs_commit_info($context['arguments']);
     list($commitid, $files) = cvs_get_files($modified_files);
 
     $params = array(
         'scm' => 'cvs',
-        'scm_name' => $scm_name,
+        'scm_name' => $context['scm_name'],
         'username' => $username,
         'commit_msg' => $commit_msg,
         'issue' => $issues,
@@ -234,11 +241,32 @@ function cvs_filter_none($rev)
  *
  * @return string
  */
-function cvs_commit_msg()
+function cvs_commit_msg($input)
 {
     // get the full commit message
-    $input = getInput();
     $commit_msg = rtrim(substr($input, strpos($input, 'Log Message:') + strlen('Log Message:') + 1));
 
     return $commit_msg;
+}
+
+/**
+ * @param string $dump_file
+ * @return array
+ */
+function load_cvs_context($dump_file)
+{
+    $context = load_context($dump_file);
+
+    // extract real cwd to use
+    $root = preg_quote($context['env']['CVSROOT'], '/');
+    if (preg_match("/^Update of (?P<cwd>$root.+)$/m", $context['stdin'], $m)) {
+        $context['original_cwd'] = $context['cwd'];
+        $context['cwd'] = $m['cwd'];
+    }
+
+    if (chdir($context['cwd']) === false) {
+        throw new RuntimeException("Unable to change directory to: {$context['cwd']}");
+    }
+
+    return $context;
 }

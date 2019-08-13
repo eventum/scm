@@ -95,8 +95,9 @@ function git_scm_ping($rev, $refname)
     try {
         scm_ping($params);
     } catch (Exception $e) {
+        global $original_argv;
         error_log("ERROR[$PROGRAM]: " . $e->getMessage());
-        error_log('Debug saved to: ' . save_environment());
+        error_log('Debug saved to: ' . save_environment($original_argv));
         exit(1);
     }
 }

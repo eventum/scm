@@ -28,7 +28,7 @@ try {
     main($scm_name, $argv);
 } catch (Exception $e) {
     error_log("ERROR[$PROGRAM]: " . $e->getMessage());
-    error_log('Debug saved to: ' . save_environment());
+    error_log('Debug saved to: ' . save_environment($original_argv, $argv));
     exit(1);
 }
 exit(0);
