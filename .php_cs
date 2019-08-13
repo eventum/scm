@@ -1,5 +1,18 @@
 <?php
 
+/*
+ * This file is part of the Eventum (Issue Tracking System) package.
+ *
+ * @copyright (c) Eventum Team
+ * @license GNU General Public License, version 2 or later (GPL-2+)
+ *
+ * For the full copyright and license information,
+ * please see the COPYING and AUTHORS files
+ * that were distributed with this source code.
+ */
+
+use Symfony\Component\Finder\SplFileInfo;
+
 $header = <<<EOF
 This file is part of the Eventum (Issue Tracking System) package.
 
@@ -11,95 +24,122 @@ please see the COPYING and AUTHORS files
 that were distributed with this source code.
 EOF;
 
-Symfony\CS\Fixer\Contrib\HeaderCommentFixer::setHeader($header);
+$config = PhpCsFixer\Config::create();
 
-$finder = Symfony\CS\Finder\DefaultFinder::create()
-	->in(__DIR__)
-	->depth(0)
-	->name('*.php')
-;
+// use git for defining input files
+// https://github.com/FriendsOfPHP/PHP-CS-Fixer/issues/2214
+$files = explode("\n", shell_exec('git ls-files'));
+// this will disable accept/reject debugging when executed from git hook
+$quiet = getenv('GIT_AUTHOR_DATE');
+$finder = $config->getFinder()
+    ->in(__DIR__)
+    ->ignoreDotFiles(false)
+    ->name('.php_cs')
+    ->notPath('localization/LINGUAS.php')
+    // this filter would accept only files that are present in Git
+    ->filter(function (SplFileInfo $file) use (&$files, $quiet) {
+        $key = array_search($file->getRelativePathname(), $files, true);
+        if (!$quiet) {
+            if ($key) {
+                error_log('ACCEPT: ' . $file->getRelativePathname());
+            } else {
+                error_log('REJECT: ' . $file->getRelativePathname());
+            }
+        }
 
-return Symfony\CS\Config\Config::create()
-	->setUsingCache(true)
-	->level(Symfony\CS\FixerInterface::NONE_LEVEL)
-	->fixers(array(
-		'header_comment',
-		'encoding',
-		'short_tag',
-		'braces',
-		'elseif',
-		'eof_ending',
-			'function_call_space',
-		'function_declaration',
-		'indentation',
-			'line_after_namespace',
-		'linefeed',
-		'lowercase_constants',
-		'lowercase_keywords',
-			'method_argument_space',
-			'multiple_use',
-			'parenthesis',
-		'php_closing_tag',
-			'single_line_after_imports',
-		'trailing_spaces',
-		'visibility',
-			'-blankline_after_open_tag',
-			'-concat_without_spaces',
-			'double_arrow_multiline_whitespaces',
-			'duplicate_semicolon',
-			'-empty_return',
-		'extra_empty_lines',
-		'include',
-			'join_function',
-			'list_commas',
-			'-multiline_array_trailing_comma',
-			'namespace_no_leading_whitespace',
-		'new_with_braces',
-			'no_blank_lines_after_class_opening',
-			'-no_empty_lines_after_phpdocs',
-		'object_operator',
-			'operators_spaces',
-			'-phpdoc_indent',
-			'-phpdoc_no_empty_return',
-			'-phpdoc_no_package',
-			'-phpdoc_params',
-			'-phpdoc_scalar',
-			'-phpdoc_separation',
-			'-phpdoc_short_description',
-			'-phpdoc_to_comment',
-			'-phpdoc_trim',
-			'-phpdoc_type_to_var',
-			'-phpdoc_var_without_name',
-			'remove_leading_slash_use',
-			'remove_lines_between_uses',
-		'return',
-			'single_array_no_trailing_comma',
-			'single_blank_line_before_namespace',
-			'single_quote',
-			'spaces_before_semicolon',
-		'-spaces_cast',
-		'standardize_not_equal',
-		'ternary_spaces',
-			'trim_array_spaces',
-			'unused_use',
-			'whitespacy_lines',
-			'-align_double_arrow',
-			'-align_equals',
-			'-concat_with_spaces',
-			'ereg_to_preg',
-			'-header_comment',
-			'long_array_syntax',
-			'multiline_spaces_before_semicolon',
-			'-newline_after_open_tag',
-			'no_blank_lines_before_namespace',
-			'ordered_use',
-			'php4_constructor',
-			'-phpdoc_order',
-			'-phpdoc_var_to_type',
-		'-short_array_syntax',
-			'-strict',
-			'-strict_param',
-		'print_to_echo',
-	))
-	->finder($finder)
-;
+        return $key;
+    });
+
+/**
+ * @see \PhpCsFixer\RuleSet
+ */
+
+$risky_rules = [
+    'ereg_to_preg' => true,
+    'no_alias_functions' => true,
+    'no_php4_constructor' => true,
+    'escape_implicit_backslashes' => false,
+    'strict_comparison' => false, // not always safe to enable: https://github.com/FriendsOfPHP/PHP-CS-Fixer/issues/4317
+    'function_to_constant' => true,
+    '@PHP71Migration' => true,
+    'combine_nested_dirname' => true,
+    'void_return' => false, // not enabled generally, may break things
+];
+
+$symfony_rules = [
+    'blank_line_after_opening_tag' => false,
+    'blank_line_before_return' => true,
+    'cast_spaces' => false,
+    'concat_space' => ['spacing' => 'one'],
+    'include' => true,
+    'new_with_braces' => true,
+    'no_blank_lines_after_class_opening' => true,
+    'no_blank_lines_after_phpdoc' => false,
+    'no_empty_statement' => true,
+    'no_extra_consecutive_blank_lines' => true,
+    'no_leading_import_slash' => true,
+    'no_leading_namespace_whitespace' => true,
+    'no_mixed_echo_print' => ['use' => 'echo'],
+    'no_multiline_whitespace_around_double_arrow' => true,
+    'no_singleline_whitespace_before_semicolons' => true,
+    'no_trailing_comma_in_list_call' => true,
+    'no_trailing_comma_in_singleline_array' => true,
+    'no_unused_imports' => true,
+    'no_whitespace_before_comma_in_array' => true,
+    'no_whitespace_in_blank_line' => true,
+    'object_operator_without_whitespace' => true,
+    'phpdoc_align' => false,
+    'phpdoc_annotation_without_dot' => true,
+    'phpdoc_indent' => true,
+    'phpdoc_inline_tag' => true,
+    'phpdoc_no_access' => false, // RemoteApi relies on these tags
+    'phpdoc_no_alias_tag' => ['type' => 'var', 'link' => 'see'],
+    'phpdoc_no_empty_return' => true,
+    'phpdoc_no_package' => true,
+    'phpdoc_scalar' => true,
+    'phpdoc_separation' => false,
+    'phpdoc_single_line_var_spacing' => true,
+    'phpdoc_summary' => false,
+    'phpdoc_to_comment' => false,
+    'phpdoc_trim' => true,
+    'self_accessor' => false, // broken with 2.14.1: https://github.com/FriendsOfPHP/PHP-CS-Fixer/issues/4307
+    'single_quote' => true,
+    'standardize_not_equals' => true,
+    'ternary_operator_spaces' => true,
+    'trailing_comma_in_multiline_array' => true,
+    'trim_array_spaces' => true,
+    'whitespace_after_comma_in_array' => true,
+];
+
+#
+# Try to use StyleCI "recommended" preset:
+# https://styleci.readme.io/v1.0/docs/presets#recommended
+$rules = $risky_rules + $symfony_rules + [
+        '@PSR2' => true,
+        'binary_operator_spaces' => ['align_double_arrow' => false],
+        'braces' => ['allow_single_line_closure' => false],
+        'function_declaration' => ['closure_function_spacing' => 'one'],
+        'header_comment' => ['header' => $header],
+        'linebreak_after_opening_tag' => false,
+        'method_argument_space' => ['keep_multiple_spaces_after_comma' => false],
+        'no_multiline_whitespace_before_semicolons' => true,
+        'no_short_echo_tag' => true,
+        'no_useless_else' => true,
+        'no_useless_return' => true,
+        'ordered_imports' => true,
+        'phpdoc_order' => true,
+        'semicolon_after_instruction' => true,
+        'simplified_null_return' => false,
+        'single_blank_line_before_namespace' => true,
+        'strict_comparison' => false,
+    ];
+
+$cacheFile = sprintf('.php_cs-%s.cache', PhpCsFixer\Console\Application::VERSION);
+error_log("Cache: $cacheFile");
+
+return $config
+    ->setRiskyAllowed(true)
+    ->setCacheFile($cacheFile)
+    ->setRules($rules);
+
+// vim:ft=php
