@@ -229,7 +229,7 @@ function _getopt($parameters)
     foreach ($options as $option => $value) {
         foreach ($argv as $key => $chunk) {
             $regex = '/^' . (isset($option[1]) ? '--' : '-') . $option . '/';
-            if ($chunk == $value && $argv[$key - 1][0] == '-' || preg_match($regex, $chunk)) {
+            if (($chunk == $value && $argv[$key - 1][0] == '-') || preg_match($regex, $chunk)) {
                 array_push($pruneargv, $key);
             }
         }
