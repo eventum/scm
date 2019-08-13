@@ -219,7 +219,6 @@ function cvs_commitid($filename)
  * filter out NONE revision
  *
  * @param string $rev
- * @return null
  */
 function cvs_filter_none($rev)
 {

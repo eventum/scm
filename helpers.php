@@ -107,12 +107,12 @@ function match_issues($commit_msg)
 /**
  * Fetch $url, return response and optionally unparsed headers array.
  *
- * @author Elan Ruusamäe <glen@delfi.ee>
  * @param string $url URL to request
  * @param array $params QueryString parameters to URL
- * @param boolean $headers = false
+ * @param bool $headers = false
  * @return mixed
  * @return array|string
+ * @author Elan Ruusamäe <glen@delfi.ee>
  */
 function wget($url, $params, $headers = true)
 {
@@ -186,7 +186,7 @@ function json_post($url, $data, $assoc = false)
     );
     $options = array(
         // this needs to be 'http', regardless if we post to https://
-        'http' => $options
+        'http' => $options,
     );
 
     $context = stream_context_create($options);
