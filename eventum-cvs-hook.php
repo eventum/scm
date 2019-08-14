@@ -14,28 +14,36 @@
 
 require_once __DIR__ . '/helpers.php';
 
-$original_argv = $argv;
 $default_options = array(
     'n' => 'cvs',
 );
-$options = _getopt('n:') + $default_options;
+$options = _getopt('l:n:') + $default_options;
 
-$PROGRAM = basename(realpath(array_shift($argv)), '.php');
-$eventum_url = array_shift($argv);
-$scm_name = $options['n'];
+if (isset($options['l'])) {
+    $context = load_cvs_context($options['l']);
+} else {
+    $context = create_context($argv);
+}
+
+$context['arguments'] = array_slice($context['argv'], 2);
+$context['scm_name'] = $options['n'];
+
+// these need to be global. for now
+$eventum_url = $context['argv'][1];
+$PROGRAM = $context['program'];
 
 try {
-    main($scm_name, $argv);
+    main($context);
 } catch (Exception $e) {
     error_log("ERROR[$PROGRAM]: " . $e->getMessage());
-    error_log('Debug saved to: ' . save_environment());
+    error_log('Debug saved to: ' . store_environment($context));
     exit(1);
 }
 exit(0);
 
-function main($scm_name, $argv)
+function main($context)
 {
-    $commit_msg = cvs_commit_msg();
+    $commit_msg = cvs_commit_msg($context['stdin']);
 
     // parse the commit message and get all issue numbers we can find
     $issues = match_issues($commit_msg);
@@ -43,12 +51,13 @@ function main($scm_name, $argv)
         return;
     }
 
-    list($username, $modified_files) = cvs_commit_info($argv);
+    list($username, $modified_files) = cvs_commit_info($context['arguments']);
     list($commitid, $files) = cvs_get_files($modified_files);
 
     $params = array(
         'scm' => 'cvs',
-        'scm_name' => $scm_name,
+        'commit_date' => $context['time'],
+        'scm_name' => $context['scm_name'],
         'username' => $username,
         'commit_msg' => $commit_msg,
         'issue' => $issues,
@@ -178,17 +187,67 @@ function cvs_parse_info_1_12($args)
 
     // now parse the list of modified files
     $modified_files = array();
+    $use_rcs = !file_exists('CVS/Entries');
     while ($file_info = array_splice($args, 0, 3)) {
         list($filename, $old_revision, $new_revision) = $file_info;
+        $old_revision = cvs_filter_none($old_revision);
+        $new_revision = cvs_filter_none($new_revision);
         $modified_files[] = array(
             'filename' => "$cvs_module/$filename",
-            'old_revision' => cvs_filter_none($old_revision),
-            'new_revision' => cvs_filter_none($new_revision),
-            'commitid' => cvs_commitid($filename),
+            'old_revision' => $old_revision,
+            'new_revision' => $new_revision,
+            'commitid' => $use_rcs ? rcs_commitid($filename, $old_revision, $new_revision) : cvs_commitid($filename),
         );
     }
 
     return $modified_files;
+}
+
+/**
+ * @param string $pattern
+ * @param array $input
+ * @return string|null
+ * @internal
+ */
+function cvs_match_commitid($pattern, array $input)
+{
+    // find line matching 'Commit Identifier'
+    $lines = preg_grep($pattern, $input);
+    if (!$lines) {
+        return null;
+    }
+
+    // match commit id
+    if (!preg_match($pattern, current($lines), $m)) {
+        return null;
+    }
+
+    return $m['commitid'];
+}
+
+/**
+ * Extract 'commitid' from file using rcs
+ *
+ * @param string $filename
+ * @param string|null $r1
+ * @param string|null $r2
+ * @return string
+ */
+function rcs_commitid($filename, $r1, $r2)
+{
+    if ($r2) {
+        // added or modified file
+        $result = execx('rcs log -r' . escapeshellarg($r2) . ' ' . escapeshellarg($filename));
+    } else {
+        // deleted file
+        // NOTE: as revision not given, this may not work if file is added again meanwhile
+        $result = execx('rcs log ' . escapeshellarg("Attic/$filename"));
+    }
+
+    // date: 2019/08/13 09:04:57;  author: glen;  state: Exp;  lines: +2 -3; commitid: uoHAXoFNyk8CxQyB
+    $pattern = '/^date:.+commitid:\s+(?P<commitid>\S+)/sm';
+
+    return cvs_match_commitid($pattern, $result);
 }
 
 /**
@@ -202,17 +261,8 @@ function cvs_commitid($filename)
     $result = execx('cvs -Qn status ' . escapeshellarg($filename));
 
     $pattern = '/Commit Identifier:\s+(?P<commitid>\S+)/';
-    // find line matching 'Commit Identifier'
-    $lines = preg_grep($pattern, $result);
-    if (!$lines) {
-        return null;
-    }
-    // match commit id
-    if (!preg_match($pattern, current($lines), $m)) {
-        return null;
-    }
 
-    return $m['commitid'];
+    return cvs_match_commitid($pattern, $result);
 }
 
 /**
@@ -234,11 +284,32 @@ function cvs_filter_none($rev)
  *
  * @return string
  */
-function cvs_commit_msg()
+function cvs_commit_msg($input)
 {
     // get the full commit message
-    $input = getInput();
     $commit_msg = rtrim(substr($input, strpos($input, 'Log Message:') + strlen('Log Message:') + 1));
 
     return $commit_msg;
+}
+
+/**
+ * @param string $dump_file
+ * @return array
+ */
+function load_cvs_context($dump_file)
+{
+    $context = load_context($dump_file);
+
+    // extract real cwd to use
+    $root = preg_quote($context['env']['CVSROOT'], '/');
+    if (preg_match("/^Update of (?P<cwd>$root.+)$/m", $context['stdin'], $m)) {
+        $context['original_cwd'] = $context['cwd'];
+        $context['cwd'] = $m['cwd'];
+    }
+
+    if (chdir($context['cwd']) === false) {
+        throw new RuntimeException("Unable to change directory to: {$context['cwd']}");
+    }
+
+    return $context;
 }

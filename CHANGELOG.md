@@ -1,5 +1,11 @@
 # Eventum SCM hook scripts
 
+## [3.2.0]
+
+- CVS: Add support for loading saved context, #7
+
+[3.2.0]: https://github.com/eventum/scm/compare/v3.1.4...v3.2.0
+
 ## [3.1.4] - 2019-08-13
 
 - include time in `save_environment`, #4
