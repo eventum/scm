@@ -35,7 +35,6 @@ $finder = $config->getFinder()
     ->in(__DIR__)
     ->ignoreDotFiles(false)
     ->name('.php_cs')
-    ->notPath('localization/LINGUAS.php')
     // this filter would accept only files that are present in Git
     ->filter(function (SplFileInfo $file) use (&$files, $quiet) {
         $key = array_search($file->getRelativePathname(), $files, true);
