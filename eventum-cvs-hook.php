@@ -196,7 +196,7 @@ function cvs_parse_info_1_12($args)
             'filename' => "$cvs_module/$filename",
             'old_revision' => $old_revision,
             'new_revision' => $new_revision,
-            'commitid' => $use_rcs ? rcs_commitid($filename, $new_revision) : cvs_commitid($filename),
+            'commitid' => $use_rcs ? rcs_commitid($filename, $old_revision, $new_revision) : cvs_commitid($filename),
         );
     }
 
@@ -229,12 +229,20 @@ function cvs_match_commitid($pattern, array $input)
  * Extract 'commitid' from file using rcs
  *
  * @param string $filename
- * @param string $revision
+ * @param string|null $r1
+ * @param string|null $r2
  * @return string
  */
-function rcs_commitid($filename, $revision)
+function rcs_commitid($filename, $r1, $r2)
 {
-    $result = execx('rcs log -r' . escapeshellarg($revision) . ' ' . escapeshellarg($filename));
+    if ($r2) {
+        // added or modified file
+        $result = execx('rcs log -r' . escapeshellarg($r2) . ' ' . escapeshellarg($filename));
+    } else {
+        // deleted file
+        // NOTE: as revision not given, this may not work if file is added again meanwhile
+        $result = execx('rcs log ' . escapeshellarg("Attic/$filename"));
+    }
 
     // date: 2019/08/13 09:04:57;  author: glen;  state: Exp;  lines: +2 -3; commitid: uoHAXoFNyk8CxQyB
     $pattern = '/^date:.+commitid:\s+(?P<commitid>\S+)/sm';
