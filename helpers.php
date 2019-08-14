@@ -288,15 +288,13 @@ function get_all_env()
  * Create execution environment context
  *
  * @param array $argv
- * @param array|null $arguments
  * @return array
  */
-function create_context(array $argv, array $arguments = null)
+function create_context(array $argv)
 {
     return array(
         'time' => microtime(true),
         'php_version' => PHP_VERSION,
-        'arguments' => $arguments,
         'argv' => $argv,
         'cwd' => getcwd(),
         'stdin' => getInput(),
@@ -324,12 +322,11 @@ function store_environment(array $context)
 
 /**
  * @param array $argv
- * @param array|null $arguments
  * @return string
  */
-function save_environment($argv, $arguments = null)
+function save_environment($argv)
 {
-    return store_environment(create_context($argv, $arguments));
+    return store_environment(create_context($argv));
 }
 
 /**
@@ -349,9 +346,13 @@ function load_context($dump_file)
     $context = unserialize($contents);
 
     // backward compatible
-    if (!isset($context['arguments']) && isset($context['command'])) {
-        $context['arguments'] = $context['command'];
-        array_shift($context['arguments']);
+    if (!isset($command['argv']) && isset($context['command'])) {
+        $context['argv'] = $context['command'];
+    }
+
+    // backward compatible
+    if (!isset($command['program'])) {
+        $context['program'] = basename($context['argv'][0], '.php');
     }
 
     return $context;

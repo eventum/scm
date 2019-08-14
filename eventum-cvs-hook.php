@@ -14,22 +14,23 @@
 
 require_once __DIR__ . '/helpers.php';
 
-$arguments = $argv;
 $default_options = array(
     'n' => 'cvs',
 );
 $options = _getopt('l:n:') + $default_options;
-$PROGRAM = basename(realpath(array_shift($arguments)), '.php');
 
 if (isset($options['l'])) {
     $context = load_cvs_context($options['l']);
 } else {
-    $context = create_context($argv, $arguments);
+    $context = create_context($argv);
 }
 
-$eventum_url = array_shift($context['arguments']);
-$context['eventum_url'] = $eventum_url;
+$context['arguments'] = array_slice($context['argv'], 2);
 $context['scm_name'] = $options['n'];
+
+// these need to be global. for now
+$eventum_url = $context['argv'][1];
+$PROGRAM = $context['program'];
 
 try {
     main($context);
