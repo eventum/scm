@@ -1,6 +1,6 @@
 # Eventum SCM hook scripts
 
-## [3.2.0]
+## [3.2.0] - 2019-08-20
 
 - CVS: Add support for loading saved context, #7
 
