@@ -35,11 +35,16 @@ before_script: |
 script:
   - make phar
 
-# https://docs.travis-ci.com/user/deployment/releases
 deploy:
   provider: releases
-  api_key:
-    secure: x3bCH29HQm6R/NLnLbjh63B9W9oIWzMNg3R8LdBVj8mFwyjNePKJ13jmXiX4OdrGk9qofr0F5RM4nw18vHt44IXXX5rCaTpky53PWjrWNYhwKhhuThZKMctTlcTlptT3FKr6Gln2y9qYMEGDAQmZ/w6dv7YMelp2d1P64XSyxOY=
+  # https://docs.travis-ci.com/user/deployment/releases/
+  # Create token with privilege in https://github.com/settings/tokens and set as env var.
+  # It must have the public_repo or repo scope to upload assets
+  # $ travis env set -p GITHUB_API_TOKEN abcdefabcdefabcdef
+  # or via https://travis-ci.org/eventum/scm/settings
+  # or automate all with:
+  # $ travis setup releases
+  api_key: $GITHUB_API_TOKEN
   file:
     - eventum-cvs-hook.phar
     - eventum-git-hook.phar
