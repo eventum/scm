@@ -265,6 +265,10 @@ function getInput()
  */
 function get_all_env()
 {
+    if (PHP_VERSION_ID >= 70100) {
+        return getenv();
+    }
+
     ob_start();
     phpinfo(INFO_ENVIRONMENT);
     $buffer = ob_get_clean();
