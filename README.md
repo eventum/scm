@@ -44,3 +44,16 @@ REV="$2"
 #!/bin/sh
 /path/to/eventum-git-hook.php -n git http://eventum.example.org/
 ```
+## GitLab
+
+GitLab is supported by Eventum itself, without scripts from this project.
+
+Configure project in GitLab webhook to post to:
+ - `https://eventum.example.net/scm_ping.php`
+
+Recommended events are:
+ - `push_events`: true
+ - `tag_push_events`: true
+ - `note_events`: true
+ - `issues_events`: true
+ - `merge_requests_events`: true
