@@ -49,7 +49,7 @@ REV="$2"
 GitLab is supported by Eventum itself, without scripts from this project.
 
 Configure project in GitLab webhook to post to:
- - `https://eventum.example.net/scm_ping.php`
+ - `https://eventum.example.org/scm_ping.php`
 
 Recommended events are:
  - `push_events`: true
@@ -57,3 +57,13 @@ Recommended events are:
  - `note_events`: true
  - `issues_events`: true
  - `merge_requests_events`: true
+
+## Re-submit failed payload
+
+In case Eventum server down, hooks create dump of post context which can be re-submitted to Eventum server.
+
+```sh
+/path/to/eventum-cvs-hook.php -n cvs http://eventum.example.org/ -l /tmp/eventum-cvs-hookuKrXLh
+```
+
+This is supported by CVS hook.
