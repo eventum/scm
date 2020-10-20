@@ -30,7 +30,7 @@ $context['scm_name'] = $options['n'];
 
 // these need to be global. for now
 $eventum_url = $context['argv'][1];
-$PROGRAM = $context['program'];
+$PROGRAM = basename($context['argv'][0], '.php');
 
 try {
     main($context);
