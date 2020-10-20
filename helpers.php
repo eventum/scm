@@ -350,12 +350,12 @@ function load_context($dump_file)
     $context = unserialize($contents);
 
     // backward compatible
-    if (!isset($command['argv']) && isset($context['command'])) {
+    if (!isset($context['argv']) && isset($context['command'])) {
         $context['argv'] = $context['command'];
     }
 
     // backward compatible
-    if (!isset($command['program'])) {
+    if (!isset($context['program'])) {
         $context['program'] = basename($context['argv'][0], '.php');
     }
 
