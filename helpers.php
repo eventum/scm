@@ -308,9 +308,7 @@ function create_context(array $argv)
 
 /**
  * Store execution environment details to temp file so the failed command could be repeated
- * @return bool|string
- */
-/**
+ *
  * @param array $context
  * @return bool|string
  */
