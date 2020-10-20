@@ -1,5 +1,11 @@
 # Eventum SCM hook scripts
 
+## [3.2.1] - 2020-10-20
+
+- Fix Undefined index: program notice, #9
+
+[3.2.1]: https://github.com/eventum/scm/compare/v3.2.0...v3.2.1
+
 ## [3.2.0] - 2019-08-20
 
 - CVS: Add support for loading saved context, #7
