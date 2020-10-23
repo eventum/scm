@@ -91,14 +91,27 @@ function fileparts($abspath)
  * parse the commit message and get all issue numbers we can find
  *
  * @param string $commit_msg
+ * @param string|null $eventum_url
  * @return array
  */
-function match_issues($commit_msg)
+function match_issues($commit_msg, $eventum_url = null)
 {
-    preg_match_all('/(?:issue|bug) ?:? ?#?(\d+)/i', $commit_msg, $matches);
+    $url_quoted = $eventum_url ? preg_quote($eventum_url, '/') : '';
 
-    if (count($matches[1]) > 0) {
-        return $matches[1];
+    preg_match_all("/
+        (?:
+            # match issue xxx and bug xxx
+            (?i:issue|bug)\s*:?\s*#?
+            |
+            # match url
+            {$url_quoted}/view\.php\?id=
+        )
+        
+        (?P<issue_id>\d+)
+    /x", $commit_msg, $matches);
+
+    if (count($matches['issue_id']) > 0) {
+        return $matches['issue_id'];
     }
 
     return null;

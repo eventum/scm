@@ -46,7 +46,7 @@ function main($context)
     $commit_msg = cvs_commit_msg($context['stdin']);
 
     // parse the commit message and get all issue numbers we can find
-    $issues = match_issues($commit_msg);
+    $issues = match_issues($commit_msg, $context['eventum_url']);
     if (!$issues) {
         return;
     }
