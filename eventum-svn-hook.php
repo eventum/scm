@@ -35,12 +35,11 @@ exit(0);
 
 function main($scm_name, $argv)
 {
-    if (count($argv) != 2) {
+    if (count($argv) !== 2) {
         throw new InvalidArgumentException('Invalid arguments');
     }
 
-    $repos = $argv[0];
-    $rev = $argv[1];
+    list($repos, $rev) = $argv;
 
     global $svnlook;
     if (!isset($svnlook)) {
