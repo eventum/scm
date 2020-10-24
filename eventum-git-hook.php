@@ -214,17 +214,6 @@ function git_format($rev, $format)
 }
 
 /**
- * Get short Git shorter unique SHA1 reference
- *
- * @param string $rev
- * @return string
- */
-function git_short_rev($rev)
-{
-    return execl("git rev-parse --short $rev");
-}
-
-/**
  * get git branch name for the refname
  *
  * @param string $refname
