@@ -33,6 +33,9 @@ jobs:
           tools: ~
           coverage: none
 
+      - name: Install box
+        run: make box.phar
+
       - name: Make PHAR
         run: make phar
 
