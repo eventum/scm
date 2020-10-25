@@ -33,4 +33,4 @@ jobs:
           coverage: none
 
       - name: Make PHAR
-        run: make
+        run: make phar
