@@ -34,3 +34,5 @@ jobs:
 
       - name: Make PHAR
         run: make phar
+
+# vim:ft=yaml:et:ts=2:sw=2
